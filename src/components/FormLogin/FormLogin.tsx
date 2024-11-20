@@ -18,7 +18,13 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { loginActions } from "@/actions/auth-actions"
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 const FormLogin = () => {
+
+	const [error,setError] = useState<string | null>(null);
+	const [isPending,startTransition] = useTransition();
+	const router = useRouter();
 
     const form = useForm<z.infer<typeof loginSchema>>({
         resolver: zodResolver(loginSchema),
@@ -29,8 +35,16 @@ const FormLogin = () => {
     })
 
     async function onSubmit(values: z.infer<typeof loginSchema>) {
-        const response = await loginActions(values); 
-		console.log({response});
+		setError(null);
+		startTransition(async () => {
+			const response = await loginActions(values); 
+			if(response.error) {
+				setError(response.error);
+			}else { 
+				router.push("/admin");
+			}
+		
+		})
     }
 
     
@@ -70,7 +84,10 @@ const FormLogin = () => {
 							</FormItem>
 						)}
 					/>
-					<Button type="submit">Submit</Button>
+					{
+						error && <FormMessage>{error}</FormMessage>
+					}
+					<Button type="submit" disabled={isPending}>Submit</Button>
 				</form>
 			</Form>
 		)

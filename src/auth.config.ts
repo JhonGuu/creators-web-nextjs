@@ -4,6 +4,7 @@ import type { NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { loginSchema } from "./lib/zod";
 import { prisma } from "./prisma";
+import bcrypt from "bcryptjs"
  
 // Notice this is only an object, not a full Auth.js instance
 export default {
@@ -22,13 +23,16 @@ export default {
               }
             })  
 
-            if(!user) {
+            if(!user || !user.password) {
               throw new Error("User not found");
             }
-          
-            return  { 
-              user
+
+            //validar contraseña 
+            const isValid = await bcrypt.compare(data.password, user.password);
+            if(!isValid) {
+              throw new Error("Incorrect password");
             }
+            return user;
           },
         }),
       ],
